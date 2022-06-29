@@ -20,19 +20,19 @@ contract TigerBuggyNFT {
 
     // percentage of sale price taken as royalty for the contract
     uint public constant contractRoyaltyPercentage = 1;
-    
+
     // percentage of sale price taken as royalty for the artist
     uint public constant artistRoyaltyPercentage = 5;
-    
+
     // address that deployed this contract
     address private deployer;
 
     // address of the artist, initial owner of all tiger tokens, recipient of artist's fees
     address private artist;
-    
+
     // initial sale price for all tokens
     uint private startingPrice;
-    
+
     // mapping from token ID to owner address
     mapping(uint => address) private tigerOwners;
 
@@ -59,11 +59,11 @@ contract TigerBuggyNFT {
     event TigerForSale(address indexed seller, uint indexed tigerId, uint price);
     event TigerSold(address indexed seller, address indexed buyer, uint indexed tigerId, uint price);
     event TigerWithdrawnFromSale(address indexed seller, uint indexed tigerId);
-    
+
     // create the contract, artist is set here and never changes subsequently
     constructor(address _artist, uint _startingPrice) {
         require(_artist != address(0));
-        _init_(artist, msg.sender, _startingPrice);
+        _init_(_artist, msg.sender, _startingPrice);
     }
 
     // initialize the contract state
@@ -71,8 +71,8 @@ contract TigerBuggyNFT {
         artist = _artist;
         deployer = _deployer;
         startingPrice = _startingPrice;
-    }        
-    
+    }
+
     // allow anyone to see if a tiger is for sale and, if so, for how much
     function isForSale(uint tigerId) external view returns (bool, uint) {
         require(tigerId < totalSupply, "index out of range");
@@ -95,7 +95,7 @@ contract TigerBuggyNFT {
 
     // get the number of tigers owned by the address
     function getBalance(address owner) public view returns (uint) {
-        return balanceOf[owner ];
+        return balanceOf[owner];
     }
 
     // get the current owner of a token, unsold tokens belong to the artist
@@ -113,7 +113,6 @@ contract TigerBuggyNFT {
         require(index < balanceOf[owner], "owner doesn't have that many tigers");
         return tigersOwnedBy[owner][index];
     }
-    
 
     // allow the current owner to put a tiger token up for sale
     function putUpForSale(uint tigerId, uint minSalePriceInWei) external {
@@ -160,6 +159,7 @@ contract TigerBuggyNFT {
         uint newIndex = balanceOf[newOwner] - 1;
         tigersOwnedBy[newOwner][newIndex] = tigerId;
         tigersOwnedByIndex[tigerId] = newIndex;
+        delete tigersForSale[tigerId];
     }
 
     // allow someone to buy a tiger offered for sale
@@ -170,15 +170,15 @@ contract TigerBuggyNFT {
         (uint contractRoyalty, uint artistRoyalty) = calculateRoyalties(msg.value);
         pendingWithdrawals[deployer] += contractRoyalty;
         pendingWithdrawals[artist] += artistRoyalty;
-        pendingWithdrawals[saleOffer.seller] += msg.value;
+        pendingWithdrawals[saleOffer.seller] += msg.value - (contractRoyalty + artistRoyalty);
         updateTigerOwnership(tigerId, msg.sender, saleOffer.seller);
         emit TigerSold(saleOffer.seller, msg.sender, tigerId, saleOffer.price);
     }
 
     // calculate the contract and artist royalties due on the sale amount
     function calculateRoyalties(uint amount) private pure returns (uint contractRoyalty, uint artistRoyalty) {
-        contractRoyalty = (contractRoyaltyPercentage / 100) * amount;
-        artistRoyalty = (artistRoyaltyPercentage / 100) * amount;
+        contractRoyalty = (amount / 100) * contractRoyaltyPercentage;
+        artistRoyalty = (amount / 100) * artistRoyaltyPercentage;
     }
 
     // allow participant to withdraw accumulated funds
@@ -187,5 +187,5 @@ contract TigerBuggyNFT {
         pendingWithdrawals[msg.sender] = 0;
     }
 
-    
+
 }
