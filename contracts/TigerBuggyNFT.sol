@@ -118,6 +118,7 @@ contract TigerBuggyNFT {
     function putUpForSale(uint tigerId, uint minSalePriceInWei) external {
         require(tigerId < totalSupply, "index out of range");
         require(getOwner(tigerId) == msg.sender, "not owner");
+        require(minSalePriceInWei > 0, "sale price can't be zero");
         tigersForSale[tigerId] = SaleOffer(true, msg.sender, minSalePriceInWei);
         emit TigerForSale(msg.sender, tigerId, minSalePriceInWei);
     }
@@ -179,12 +180,14 @@ contract TigerBuggyNFT {
     function calculateRoyalties(uint amount) private pure returns (uint contractRoyalty, uint artistRoyalty) {
         contractRoyalty = (amount / 100) * contractRoyaltyPercentage;
         artistRoyalty = (amount / 100) * artistRoyaltyPercentage;
+
+        return (contractRoyalty, artistRoyalty);
     }
 
     // allow participant to withdraw accumulated funds
     function withdrawFunds() external {
-        payable(msg.sender).call{value: pendingWithdrawals[msg.sender]}("");
         pendingWithdrawals[msg.sender] = 0;
+        payable(msg.sender).transfer(pendingWithdrawals[msg.sender]);
     }
 
 
