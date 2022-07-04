@@ -186,8 +186,10 @@ contract TigerBuggyNFT {
 
     // allow participant to withdraw accumulated funds
     function withdrawFunds() external {
+        uint balance = pendingWithdrawals[msg.sender];
         pendingWithdrawals[msg.sender] = 0;
-        payable(msg.sender).transfer(pendingWithdrawals[msg.sender]);
+
+        payable(msg.sender).transfer(balance);
     }
 
 
